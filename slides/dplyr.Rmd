@@ -1,0 +1,379 @@
+---
+title: "dplyr"
+subtitle: "Manipulação de dados com R"
+author: "Curso-R"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+class: middle, center
+
+# Introdução
+
+---
+
+## Curso-R
+
+* Nosso primeiro curso foi em 2015, no IME-USP.
+* A empresa surgiu em 2017.
+* Filosofias: código aberto, compartilhar conhecimento.
+
+---
+
+## Membros
+
+<img src="https://github.com/curso-r/201803-introducao-a-programacao-em-r/blob/master/aula-intro-r/img/Curso-R-2.png?raw=true" style="width: 80%;"></img>
+
+---
+
+## O Curso
+
+Nosso curso se baseia no livro [R for data science](https://r4ds.had.co.nz).
+
+---
+
+## Material da Curso-R
+
+Temos um material em português disponível nesta página:
+
+http://material.curso-r.com/
+
+Também temos um blog:
+
+http://curso-r.com/blog/
+
+---
+
+## O Ciclo da Ciência de Dados
+
+![](http://r4ds.had.co.nz/diagrams/data-science-wrangle.png)
+
+---
+
+## O tidyverse
+
+[tidyverse.org](https://www.tidyverse.org)
+
+Todos os pacotes compartilham uma filosofia de desenvolvimento, sintaxe e estruturas de dados.
+
+---
+
+## O pipe (%>%)
+
+```{r, eval = FALSE}
+# As duas linhas abaixo são equivalentes.
+
+f(x, y)
+x %>% f(y)
+```
+
+---
+class: middle, center
+
+# dplyr
+
+---
+class: middle
+
+```{r setup, include=FALSE}
+library(tidyverse)
+imdb <- read_rds("../data/imdb.rds")
+```
+
+> “Happy families are all alike; every unhappy family is unhappy in its own way.” –– Leo Tolstoy
+
+
+> “Tidy datasets are all alike, but every messy dataset is messy in its own way.” –– Hadley Wickham
+
+---
+
+## Os 6 verbos do dplyr
+
+* `filter()`: selecionar observações (linhas) da base de dados
+* `arrange()`: ordenar de acordo com alguma variável (coluna)
+* `select()`: slecionar variáveis (colunas)
+* `mutate()`: modificar/criar variáveis do banco de dados
+* `summarise()`: sumarisar/agregar variáveis de uma base de dados
+* `group_by()`: agrupar pelos valores de alguma variável
+
+---
+
+## 3 regras
+
+* o primeiro argumento é sempre um `data.frame`
+* os outros argumentos descrevem o que você quer fazer
+* todos os verbos retornam sempre um `data.frame`
+
+Essas três regras fazem o uso do pipe (`%>%`) ser muito intuitivo.
+
+---
+
+## filter
+
+> Selecionar **linhas** da base de dados!
+
+```{r, warning=FALSE}
+imdb %>% filter(nota_imdb > 9)
+```
+
+---
+
+## filter
+
+> Você pode salvar os resultados em uma outra variável:
+
+```{r, warning=FALSE}
+filmes_bons <- imdb %>% filter(nota_imdb > 9)
+filmes_bons
+```
+
+---
+
+## filter
+
+> Você pode sobreescrever a base também:
+
+```{r}
+filmes_bons <- filmes_bons %>% filter(orcamento < 1000000)
+filmes_bons
+```
+
+---
+class: center, middle
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+---
+
+## arrange
+
+> Ordenar linhas da base de acordo com alguma variável
+
+```{r}
+imdb %>% arrange(orcamento)
+```
+
+---
+
+## arrange
+
+> Você também pode ordenar na ordem decrescente
+
+```{r}
+imdb %>% arrange(desc(orcamento))
+```
+
+---
+
+## arrange
+
+> Também é possível ordenar por mais de uma variável:
+
+```{r}
+imdb %>% arrange(desc(ano), titulo)
+```
+
+---
+class: center, middle
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+---
+
+## select
+
+> Selecionar colunas de uma tabela
+
+```{r}
+imdb %>% select(titulo, ano, orcamento)
+```
+
+---
+
+## select
+
+> Funções úteis p/ seleção
+
+```{r}
+imdb %>% select(starts_with("ator"))
+```
+
+---
+
+## select
+
+> Excluir variáveis:
+
+```{r}
+imdb %>% select(-starts_with("ator"), -titulo)
+```
+
+---
+
+## select
+
+> Outras funções úteis de seleção
+
+* `starts_with("abc")`: seleciona nomes que começam com "abc"
+
+* `ends_with("xyz")`: seleciona nomes que terminam com "xyz"
+
+* `contains("ijk")`: seleciona nomes que contêm "ijk"
+
+* `matches("(.)\\1")`: seleciona nomes usando Expressões Regulares
+
+* `num_range("x", 1:3)`: seleciona x1, x3 e x3
+
+---
+class: center, middle
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+---
+
+## mutate
+
+> Criar ou modificar colunas de um banco de dados.
+
+```{r}
+imdb %>% mutate(duracao = duracao/60)
+```
+
+---
+
+## mutate
+
+> Criando uma nova variável
+
+```{r}
+imdb %>% mutate(duracao_horas = duracao/60)
+```
+
+
+---
+class: center, middle
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+
+---
+
+## summarise
+
+> Agregar/Sumarisar a tabela
+
+```{r}
+imdb %>% summarise(media_orcamento = mean(orcamento, na.rm=TRUE))
+```
+
+---
+
+## summarise
+
+> Calcular várias medidas agregadas
+
+```{r}
+imdb %>% summarise(
+  media_orcamento = mean(orcamento, na.rm=TRUE),
+  mediana_orcamento = median(orcamento, na.rm = TRUE)
+  )
+```
+
+---
+class: center, middle
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+---
+
+## group_by + summarise
+
+> Sumarisar/Agregar a base por grupos
+
+```{r}
+imdb %>% group_by(ano)
+```
+
+---
+
+## group_by + summarise
+
+> Agregar/Sumarisar por grupos
+
+```{r}
+imdb %>% group_by(ano) %>% summarise(qtd_filmes = n())
+```
+
+---
+class: middle, center
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+
+---
+
+## left join
+
+> Tipos de joins
+
+<img src="http://r4ds.had.co.nz/diagrams/join-outer.png" style="width: 40%;" class="middle center">
+
+---
+
+## left join
+
+> Chaves duplicadas na tabela da esquerda
+
+![](http://r4ds.had.co.nz/diagrams/join-one-to-many.png)
+
+---
+
+## left join
+
+> Chaves duplicadas nas duas tabelas
+
+![](http://r4ds.had.co.nz/diagrams/join-many-to-many.png)
+
+---
+class: middle, center
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+---
+
+## gather
+
+> Transformar variáveis em linhas:
+
+![](http://r4ds.had.co.nz/images/tidy-9.png)
+
+---
+class: middle, center
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+---
+
+## spread
+
+> Transformar linhas em colunas
+
+![](http://r4ds.had.co.nz/images/tidy-8.png)
+
+---
+class: middle, center
+
+![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+
+
+---
+
+## Continue aprendendo
+
+* [R para Data Science](http://r4ds.had.co.nz/wrangle-intro.html)
+* [Material da Curso-R](http://material.curso-r.com/manip/)
