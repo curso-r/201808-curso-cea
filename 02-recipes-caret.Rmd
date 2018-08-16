@@ -1,0 +1,202 @@
+---
+title: "Modelagem com recipes e caret"
+author: "William Amorim"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+# Motivação
+
+O ajuste de modelos estatísticos envolve a construção da matriz de planejamento $X$.
+
+<br>
+
+$$
+Y = X\beta + \epsilon
+$$
+
+<br>
+
+--
+
+No R, em geral, não precisamos nos preocupar com essa etapa graças às fórmulas.
+
+
+```{r, eval = FALSE}
+lm(mpg ~ cyl + disp + wt + as.factor(gear), data = mtcars)
+```
+
+--
+
+<br>
+
+Como a função `lm()` interpreta a fórmula?
+
+---
+
+# Motivação
+
+```{r, eval = FALSE}
+lm(mpg ~ cyl + disp + wt + as.factor(gear), data = mtcars)
+```
+
+- Definindo a variável `mpg` como reposta.
+
+- Definindo as variáveis `cyl`, `disp`, `wt`e `gear` como explicativas.
+
+- Criando variáveis dummies para a variável `gear`.
+
+- Criando a matriz $X$.
+
+--
+
+<br>
+
+No entanto, esse framework tem algumas limitações.
+
+---
+
+# Motivação
+
+- Quando temos muitos preditores, precisamos colocá-los um a um.
+
+```{r, eval = FALSE}
+lm(
+  price ~ x + y + z + carat + cut + clarity + depth + table, 
+  data = diamonds
+)
+```
+
+<br>
+
+- Também precisamos especificar todas as interações.
+
+```{r, eval = FALSE}
+lm(
+  formula = price ~ x + y + z + carat + cut + clarity + depth + 
+    table + x*y + x*z + y*z + carat*cut + depth*cut, 
+  data = diamonds
+)
+```
+
+---
+
+# Motivação
+
+- Diferentes pacotes podem utilizar interpratar as fórmulas de diferentes maneiras.
+
+```{r, eval = FALSE}
+lme(
+  yield ~ variety*nitrogen, 
+  random = ~ 1|block/mainplot,
+  data = oats
+)
+
+lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
+```
+
+<br>
+
+- Você não pode usar a mesma matriz de planejamento para ajustar diferentes modelos.
+
+---
+
+# O pacote recipes
+
+- Framework para criação de matrizes modelo.
+
+- Abstrai etapas de manipulação de dados específicas para modelagem, como criação de dummies, imputação e transformações.
+
+<br>
+
+<img src="https://raw.githubusercontent.com/tidymodels/recipes/master/recipes_hex_thumb.png" style="display: block; margin-left: auto; margin-right: auto "></img>
+
+---
+
+# O pacote recipes
+
+As 3 principais funções são:
+
+- recipe(): especifica o que você pretende fazer
+
+- prepare(): computa as modificações 
+
+- bake(): aplica as modificações a uma base da dados
+
+---
+
+# Pacote Caret
+
+ Pacote do R!
+* Criado pelo Max Kuhn (hoje no RStudio)
+
+![:scale 40%](https://avatars1.githubusercontent.com/u/5731043?s=400&v=4)
+
+* Abreviação de _Classification And Regression Training_
+* Primeira versão em 2007
+
+---
+
+# Motivação
+
+* Cada pacote do R tem a sua forma de especificar o modelo
+* Cada um também tem a sua forma de especificar predições
+* É normal ter este tipo de inconsistências uma vez que são feitos por autores distintos
+
+## Exemplo
+
+Como pedir a estimativa da probabilidade em um modelo binário em diversas funções/pacotes:
+
+* `lda` (MASS): `predict(obj)`
+* `glm` (stats): `predict(obj, type = "response")`
+* `gbm` (gbm): predict(obj, type = "response", n.trees)
+* `rpart` (rpart): `predict(obj, type = "prob")`
+
+---
+class: center, middle
+
+# caret
+
+## Menor atrito cognitivo para ajustar muitos modelos
+
+![:scale 70%](https://upload.wikimedia.org/wikipedia/commons/b/b5/A_Ariel_view_of_Carot.jpg)
+
+---
+
+# caret
+
+Inclui funções para:
+
+* separação dos dados
+* pré-processamento
+* seleção de variáveis
+* tuning de modelos e validação cruzada
+* estimação de importância de variáveis
+
+Todas criadas de forma padronizada.
+
+![:scale 35%](https://cdn.notonthehighstreet.com/system/product_images/images/002/128/349/original_rabbit-and-carrots-wrapping-paper-set.jpg)
+
+---
+
+# Alternativas
+
+* `mlr`: [https://github.com/mlr-org/mlr](https://github.com/mlr-org/mlr)
+* `parsnip`: [https://github.com/topepo/parsnip](https://github.com/topepo/parsnip) (em desenvolvimento)
+
+![:scale 70%](https://www.simplyrecipes.com/wp-content/uploads/2009/12/parsnips-horiz-1800.jpg)
+
+* `scikit-learn`: [https://github.com/scikit-learn/scikit-learn](https://github.com/scikit-learn/scikit-learn) (python)
