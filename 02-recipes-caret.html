@@ -76,49 +76,41 @@ No entanto, esse framework tem algumas limitações.
 
 # Motivação
 
-- Quando temos muitos preditores, precisamos colocá-los um a um.
+- Fórmulas não acomodam muito bem muitas transformações ou operações sequenciais:
 
 
 ```r
 lm(
-  price ~ x + y + z + carat + cut + clarity + depth + table, 
-  data = diamonds
+  log(mpg) ~ scale_fun(center_fun(impute_fun(disp))), 
+  data = mtcars
 )
 ```
 
+--
+
 &lt;br&gt;
 
-- Também precisamos especificar todas as interações.
+- Diferentes funções podem utilizar as fórmulas de diferentes maneiras.
 
 
 ```r
-lm(
-  formula = price ~ x + y + z + carat + cut + clarity + depth + 
-    table + x*y + x*z + y*z + carat*cut + depth*cut, 
-  data = diamonds
+nlme::lme(
+  Y ~ X1 + X2, 
+  random = ~ 1|X3,
+  data = oats
 )
+
+lme4::lmer(yield ~ X1 + X2 + (1 | X3), data = oats)
 ```
 
 ---
 
 # Motivação
 
-- Diferentes pacotes podem utilizar interpratar as fórmulas de diferentes maneiras.
+- Para um número muito grande de preditores, a criação das matrizes de planejamento podem tomar um tempo de computação considerável. [Ver este blog post](https://rviews.rstudio.com/2017/03/01/the-r-formula-method-the-bad-parts/).
 
 
-```r
-lme(
-  yield ~ variety*nitrogen, 
-  random = ~ 1|block/mainplot,
-  data = oats
-)
-
-lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
-```
-
-&lt;br&gt;
-
-- Você não pode usar a mesma matriz de planejamento para ajustar diferentes modelos.
+- Em geral, você não consegue usar a mesma matriz de planejamento para ajustar diferentes modelos.
 
 ---
 
@@ -126,7 +118,9 @@ lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
 
 - Framework para criação de matrizes modelo.
 
-- Abstrai etapas de manipulação de dados específicas para modelagem, como criação de dummies, imputação e transformações.
+- Abstrai algumas etapas de manipulação de dados, como criação de dummies, imputação e transformações.
+
+- Permite a reutilização de matrizes e a execução de cálculos parciais.
 
 &lt;br&gt;
 
@@ -136,13 +130,79 @@ lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
 
 # O pacote recipes
 
-As 3 principais funções são:
+As principais funções são:
 
-- recipe(): especifica o que você pretende fazer
+- `recipe()`: especifica o que você pretende fazer
 
-- prepare(): computa as modificações 
+- `steps()`: indica as possíveis modificações na base
 
-- bake(): aplica as modificações a uma base da dados
+- `prepare()`: faz os cálculos necessários para a aplicação das modificações
+
+- `bake()`: aplica as modificações a uma base da dados
+
+--
+
+Alguns dos steps disponíveis:
+
+- Transformações: log, raiz, polinômios, centralização, padronização...
+
+- Codificação: dummies, criação do level "other" para fatores...
+
+- Imputação: média, moda, K-nearest neighbors
+
+- Redução de dimensionalidade: PCA
+
+---
+
+# O pacote recipes
+
+Exemplo
+
+
+```r
+receita &lt;- recipe(price ~ . , data = diamonds) %&gt;%
+  step_dummy(cut, color, clarity) %&gt;%
+  step_interact(
+    terms = ~ x:y + x:z + y:z + carat*cut + depth*cut
+  ) %&gt;% 
+  step_log(all_outcomes())
+
+prep &lt;- prep(receita, data = diamonds)
+
+matriz_X &lt;- bake(prep, data = diamonds)
+```
+
+
+
+---
+
+# Pacote caret
+
+- Abreviação de _Classification And Regression Training_.
+
+- Padroniza a especificação de modelos preditivos no R.
+
+- Também padroniza a forma de avaliar os resultados e fazer predições.
+
+- Aceita receitas do pacote `recipes`.
+
+&lt;br&gt;
+
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/A_Ariel_view_of_Carot.jpg" style="display: block; margin-left: auto; margin-right: auto; width: 40%"&gt;&lt;/img&gt;
+
+---
+
+# O pacote caret
+
+Inclui funções para:
+
+- separação dos dados
+- &lt;s&gt;pré-processamento&lt;/s&gt; (utilizaremos o `recipes`)
+- seleção de variáveis
+- tuning e validação cruzada
+- estimação de importância de variáveis
+
+Todas criadas de forma padronizada.
     </textarea>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({

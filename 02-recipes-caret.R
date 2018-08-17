@@ -26,29 +26,27 @@ id_new <- sample(nrow(diamonds), size = 1000)
 new_diamonds <- diamonds[id_new,]
 diamonds <- diamonds[-id_new,]
 
-ggplot(diamonds, aes(x = log(price))) + 
+ggplot(diamonds, aes(x = price)) + 
   geom_histogram(bins = 20)
 
-# Criando receita
+
+# Criando a receita -------------------------------------------------------
 
 receita <- recipe(price ~ . , data = diamonds) %>%
-  step_dummy(all_nominal(), -all_outcomes()) %>%
+  step_dummy(all_nominal()) %>%
   step_nzv(all_predictors()) %>%
   step_corr(all_predictors()) %>% 
   step_log(all_outcomes())
 
-# Treinando o modelo
+prep <- prep(receita, diamonds)
 
-train_control <- trainControl(
-  method = "cv", 
-  number = 5
-)
+# Treinando o modelo ------------------------------------------------------
 
 modelo <- train(
   receita, 
   diamonds, 
   method = "lm", 
-  trControl = train_control
+  trControl = trainControl(method = "cv", number = 5)
 )
 
 modelo
@@ -58,48 +56,47 @@ varImp(modelo)
 
 # Fazendo previsões -------------------------------------------------------
 
-prep <- prep(receita, diamonds)
-new_diamonds_prep <- bake(prep, new_diamonds)
+new_X <- bake(prep, new_diamonds)
 
-new_diamonds$valores_preditos <- predict(modelo, new_diamonds_prep)
-
-ggplot(new_diamonds_prep, aes(x = valores_preditos, y = price)) +
+new_X %>% 
+  mutate(pred = predict(modelo, new_X)) %>% 
+  ggplot(aes(y = pred, x = price)) +
   geom_point() +
   geom_abline(intercept = 0, slope = 1, color = "blue")
-# 
-# 
-# # GLM ---------------------------------------------------------------------
-# 
-# # Criando receita
-# 
-# receita <- recipe(price ~ . , data = diamonds) %>%
-#   step_dummy(all_nominal(), -all_outcomes()) %>%
-#   step_nzv(all_predictors()) %>%
-#   step_corr(all_predictors())
-# 
-# # Treinando o modelo
-# 
-# modelo <- train(
-#   receita, 
-#   diamonds, 
-#   method = "glm",
-#   family = inverse.gaussian(),
-#   trControl = train_control
-# )
-# 
-# modelo
-# summary(modelo)
-# varImp(modelo)
-# 
-# # Fazendo previsões -------------------------------------------------------
-# 
-# prep <- prep(receita, diamonds)
-# new_diamonds_prep <- bake(prep, new_diamonds)
-# 
-# new_diamonds$valores_preditos <- predict(modelo, new_diamonds_prep)
-# 
-# ggplot(new_diamonds_prep, aes(x = valores_preditos, y = price)) +
-#   geom_point() +
-#   geom_abline(intercept = 0, slope = 1, color = "blue")
 
+
+
+# ÁRVORE DE DECISÃO -------------------------------------------------------
+
+# Criando a receita -------------------------------------------------------
+
+receita <- recipe(price ~ . , data = diamonds) %>%
+  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE) %>%
+  step_nzv(all_predictors()) %>%
+  step_corr(all_predictors())
+
+prep <- prep(receita, diamonds)
+
+# Treinando o modelo
+
+modelo <- train(
+  receita,
+  diamonds,
+  method = "rpart",
+  trControl = trainControl(method = "cv", number = 5)
+)
+
+modelo
+rpart.plot::rpart.plot(modelo$finalModel)
+varImp(modelo)
+
+# Fazendo previsões -------------------------------------------------------
+
+new_X <- bake(prep, new_diamonds)
+
+new_X %>% 
+  mutate(pred = predict(modelo, new_X)) %>% 
+  ggplot(aes(y = pred, x = price)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "blue")
 

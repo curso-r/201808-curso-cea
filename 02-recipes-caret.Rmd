@@ -43,7 +43,7 @@ lm(mpg ~ cyl + disp + wt + as.factor(gear), data = mtcars)
 
 <br>
 
-Como a função `lm()` interpreta a fórmula?
+Como a função `lm()` interpreta essa fórmula?
 
 ---
 
@@ -71,46 +71,39 @@ No entanto, esse framework tem algumas limitações.
 
 # Motivação
 
-- Quando temos muitos preditores, precisamos colocá-los um a um.
+- Fórmulas não acomodam muito bem muitas transformações ou operações sequenciais:
 
 ```{r, eval = FALSE}
 lm(
-  price ~ x + y + z + carat + cut + clarity + depth + table, 
-  data = diamonds
+  log(mpg) ~ scale_fun(center_fun(impute_fun(disp))), 
+  data = mtcars
 )
 ```
 
+--
+
 <br>
 
-- Também precisamos especificar todas as interações.
+- Diferentes funções podem utilizar as fórmulas de diferentes maneiras.
 
 ```{r, eval = FALSE}
-lm(
-  formula = price ~ x + y + z + carat + cut + clarity + depth + 
-    table + x*y + x*z + y*z + carat*cut + depth*cut, 
-  data = diamonds
+nlme::lme(
+  Y ~ X1 + X2, 
+  random = ~ 1|X3,
+  data = oats
 )
+
+lme4::lmer(yield ~ X1 + X2 + (1 | X3), data = oats)
 ```
 
 ---
 
 # Motivação
 
-- Diferentes pacotes podem utilizar interpratar as fórmulas de diferentes maneiras.
+- Para um número muito grande de preditores, a criação das matrizes de planejamento podem tomar um tempo de computação considerável. [Ver este blog post](https://rviews.rstudio.com/2017/03/01/the-r-formula-method-the-bad-parts/).
 
-```{r, eval = FALSE}
-lme(
-  yield ~ variety*nitrogen, 
-  random = ~ 1|block/mainplot,
-  data = oats
-)
 
-lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
-```
-
-<br>
-
-- Você não pode usar a mesma matriz de planejamento para ajustar diferentes modelos.
+- Em geral, você não consegue usar a mesma matriz de planejamento para ajustar diferentes modelos.
 
 ---
 
@@ -118,7 +111,9 @@ lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
 
 - Framework para criação de matrizes modelo.
 
-- Abstrai etapas de manipulação de dados específicas para modelagem, como criação de dummies, imputação e transformações.
+- Abstrai algumas etapas de manipulação de dados, como criação de dummies, imputação e transformações.
+
+- Permite a reutilização de matrizes e a execução de cálculos parciais.
 
 <br>
 
@@ -128,75 +123,77 @@ lmer(yield ~ variety*nitrogen + (1 | block/mainplot), data = oats)
 
 # O pacote recipes
 
-As 3 principais funções são:
+As principais funções são:
 
-- recipe(): especifica o que você pretende fazer
+- `recipe()`: especifica o que você pretende fazer
 
-- prepare(): computa as modificações 
+- `steps()`: indica as possíveis modificações na base
 
-- bake(): aplica as modificações a uma base da dados
+- `prepare()`: faz os cálculos necessários para a aplicação das modificações
 
----
+- `bake()`: aplica as modificações a uma base da dados
 
-# Pacote Caret
+--
 
- Pacote do R!
-* Criado pelo Max Kuhn (hoje no RStudio)
+Alguns dos steps disponíveis:
 
-![:scale 40%](https://avatars1.githubusercontent.com/u/5731043?s=400&v=4)
+- Transformações: log, raiz, polinômios, centralização, padronização...
 
-* Abreviação de _Classification And Regression Training_
-* Primeira versão em 2007
+- Codificação: dummies, criação do level "other" para fatores...
 
----
+- Imputação: média, moda, K-nearest neighbors
 
-# Motivação
-
-* Cada pacote do R tem a sua forma de especificar o modelo
-* Cada um também tem a sua forma de especificar predições
-* É normal ter este tipo de inconsistências uma vez que são feitos por autores distintos
-
-## Exemplo
-
-Como pedir a estimativa da probabilidade em um modelo binário em diversas funções/pacotes:
-
-* `lda` (MASS): `predict(obj)`
-* `glm` (stats): `predict(obj, type = "response")`
-* `gbm` (gbm): predict(obj, type = "response", n.trees)
-* `rpart` (rpart): `predict(obj, type = "prob")`
-
----
-class: center, middle
-
-# caret
-
-## Menor atrito cognitivo para ajustar muitos modelos
-
-![:scale 70%](https://upload.wikimedia.org/wikipedia/commons/b/b5/A_Ariel_view_of_Carot.jpg)
+- Redução de dimensionalidade: PCA
 
 ---
 
-# caret
+# O pacote recipes
+
+Exemplo
+
+```{r, eval = FALSE}
+receita <- recipe(price ~ . , data = diamonds) %>%
+  step_dummy(cut, color, clarity) %>%
+  step_interact(
+    terms = ~ x:y + x:z + y:z + carat*cut + depth*cut
+  ) %>% 
+  step_log(all_outcomes())
+
+prep <- prep(receita, data = diamonds)
+
+matriz_X <- bake(prep, data = diamonds)
+```
+
+
+
+---
+
+# Pacote caret
+
+- Abreviação de _Classification And Regression Training_.
+
+- Padroniza a especificação de modelos preditivos no R.
+
+- Também padroniza a forma de avaliar os resultados e fazer predições.
+
+- Aceita receitas do pacote `recipes`.
+
+<br>
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/A_Ariel_view_of_Carot.jpg" style="display: block; margin-left: auto; margin-right: auto; width: 40%"></img>
+
+---
+
+# O pacote caret
 
 Inclui funções para:
 
-* separação dos dados
-* pré-processamento
-* seleção de variáveis
-* tuning de modelos e validação cruzada
-* estimação de importância de variáveis
+- separação dos dados
+- <s>pré-processamento</s> (utilizaremos o `recipes`)
+- seleção de variáveis
+- tuning e validação cruzada
+- estimação de importância de variáveis
 
 Todas criadas de forma padronizada.
 
-![:scale 35%](https://cdn.notonthehighstreet.com/system/product_images/images/002/128/349/original_rabbit-and-carrots-wrapping-paper-set.jpg)
 
----
-
-# Alternativas
-
-* `mlr`: [https://github.com/mlr-org/mlr](https://github.com/mlr-org/mlr)
-* `parsnip`: [https://github.com/topepo/parsnip](https://github.com/topepo/parsnip) (em desenvolvimento)
-
-![:scale 70%](https://www.simplyrecipes.com/wp-content/uploads/2009/12/parsnips-horiz-1800.jpg)
-
-* `scikit-learn`: [https://github.com/scikit-learn/scikit-learn](https://github.com/scikit-learn/scikit-learn) (python)
