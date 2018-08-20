@@ -50,7 +50,7 @@ modelo <- train(
 )
 
 modelo
-summary(modelo)
+summary(modelo$finalModel)
 varImp(modelo)
 
 
@@ -71,7 +71,10 @@ new_X %>%
 # Criando a receita -------------------------------------------------------
 
 receita <- recipe(price ~ . , data = diamonds) %>%
-  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE) %>%
+  step_dummy(
+    all_nominal(), 
+    one_hot = TRUE
+  ) %>%
   step_nzv(all_predictors()) %>%
   step_corr(all_predictors())
 
@@ -79,11 +82,14 @@ prep <- prep(receita, diamonds)
 
 # Treinando o modelo
 
+tune_grid <- data.frame(cp = c(0.01, 0.02, 0.03, 0.04))
+
 modelo <- train(
   receita,
   diamonds,
   method = "rpart",
-  trControl = trainControl(method = "cv", number = 5)
+  trControl = trainControl(method = "cv", number = 5),
+  tuneGrid = tune_grid
 )
 
 modelo
