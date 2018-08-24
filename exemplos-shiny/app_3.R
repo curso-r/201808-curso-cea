@@ -14,7 +14,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "man",
         label = "Manufacturer:",
-        choices = c("All",unique(as.character(mpg$manufacturer)))
+        choices = c("All", unique(as.character(mpg$manufacturer)))
       )
     ),
     column(
@@ -42,25 +42,27 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   # Filter data based on selections
-  output$table <- DT::renderDataTable(DT::datatable({
+  output$table <- DT::renderDataTable(
     
-    data <- mpg
-    
-    if (input$man != "All") {
-      data <- data[data$manufacturer == input$man,]
-    }
-    
-    if (input$cyl != "All") {
-      data <- data[data$cyl == input$cyl,]
-    }
-    
-    if (input$trans != "All") {
-      data <- data[data$trans == input$trans,]
-    }
-    
-    data
-    
-  }))
+    DT::datatable({
+      
+      data <- mpg
+      
+      if (input$man != "All") {
+        data <- data[data$manufacturer == input$man,]
+      }
+      
+      if (input$cyl != "All") {
+        data <- data[data$cyl == input$cyl,]
+      }
+      
+      if (input$trans != "All") {
+        data <- data[data$trans == input$trans,]
+      }
+      
+      data
+      
+    }))
   
 }
 

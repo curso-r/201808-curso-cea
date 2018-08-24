@@ -12,18 +12,25 @@ ui <- fluidPage(
         label = "Número de observações:",
         min = 1,
         max = 1000,
-        value = 100
+        value = 555
       )
     ),
     
     mainPanel(
-      plotOutput(outputId = "hist")
+      plotOutput(outputId = "hist"),
+      textOutput(outputId = "text")
     )
     
   )
 )
 
 server <- function(input, output) {
+  
+  n_2 <- reactive({
+    
+    input$obs*2
+    
+  })
   
   output$hist <- renderPlot({
     
@@ -37,6 +44,10 @@ server <- function(input, output) {
       )
     )
     
+  })
+  
+  output$text <- renderText({
+    paste("Oi!", n_2())
   })
   
 }

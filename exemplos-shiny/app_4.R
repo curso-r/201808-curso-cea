@@ -1,5 +1,8 @@
 library(shiny)
 library(plotly)
+library(leaflet)
+
+leaflet::leafletO
 
 ui <- fluidPage(
   

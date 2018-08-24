@@ -2,8 +2,7 @@
 
 library(shiny)
 
-ui <- fluidPage('Hello World')
-
+ui <- fixedPage('Hello World')
 
 server <- function(input, output) {
 
